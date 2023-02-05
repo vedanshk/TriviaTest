@@ -30,7 +30,6 @@ public class QuestionBank {
                 JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(
                         Request.Method.GET, url, null, response -> {
 
-                        Log.d(TAG, "getQuestions: ");
 
                         for (int i = 0;  i<response.length();++i){
                                 try {

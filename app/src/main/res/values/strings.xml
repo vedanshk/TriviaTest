@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">TriviaTest</string>
+    <string name="title">Travia</string>
+    <string name="correct">true</string>
+    <string name="wrong">False</string>
+    <string name="next_button">Next Button</string>
+    <string name="back_button">Back Button</string>
+    <string name="_0_out_100">0 out 100</string>
+    <string name="next">Next</string>
+    <string name="back">Back</string>
+    <string name="question">question</string>
 </resources>
