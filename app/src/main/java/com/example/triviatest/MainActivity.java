@@ -3,6 +3,7 @@ package com.example.triviatest;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,48 +16,88 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.triviatest.data.AnswerListAsyncResponse;
 import com.example.triviatest.data.QuestionBank;
 import com.example.triviatest.model.Question;
-import com.google.android.material.snackbar.BaseTransientBottomBar;
+import com.example.triviatest.model.Score;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener
 {
     private static final String TAG = "MainActivity";
+    private static final String TRIVIA_PREFS = "travia";
+    private static final String SCORE = "score" ;
+
+    private int scoreCounter =0;
+    private Score score;
+
+    SharedPreferences sharedPreferences ;
+    SharedPreferences.Editor editor;
 
     CardView cardView;
     ImageButton nextButton , backButton;
     Button btnTrue , btnFalse;
-    TextView txtCounter , txtQuestion;
+    TextView txtCounter , txtQuestion ,txtScore;
     private int currentQuestionIndex = 0;
     private List<Question> questionsList;
-
+    public static final String QUESTION_BANK ="question_bank";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initViews();
+        score = new Score();
+        Gson gson = new Gson();
+        sharedPreferences = getSharedPreferences(TRIVIA_PREFS ,MODE_PRIVATE);
+        editor = sharedPreferences.edit();
 
-        questionsList = new QuestionBank().getQuestions(new AnswerListAsyncResponse() {
-            @Override
-            public void processFinished(ArrayList<Question> questionBanks) {
+        Type questionType = new TypeToken<List<Question>>(){}.getType();
 
-                String question = (currentQuestionIndex+1) + ": "+questionBanks.get(currentQuestionIndex).getQuestion()+"?";
-                String count =currentQuestionIndex+ " / " + questionsList.size();
-                txtCounter.setText(count);
-             txtQuestion.setText(question);
+        ArrayList<Question> questionsBank = gson.fromJson(sharedPreferences.getString(QUESTION_BANK , null) , questionType);
 
-            }
-        });
+        String lastScore = sharedPreferences.getString(SCORE , "0");
+        if( null != questionsBank && !lastScore.equals("")){
+            Log.d(TAG, "onCreate: inside if statement");
+            questionsList =  questionsBank;
+             showinital(questionsBank , lastScore);
+
+        }else{
+            Log.d(TAG, "onCreate: inside else statement");
+           questionsList = new QuestionBank().getQuestions(questionBanks -> {
+
+                editor.putString(QUESTION_BANK  , gson.toJson(questionBanks));
+                editor.commit();
+
+                showinital(questionBanks , String.valueOf(scoreCounter));
+
+            });
+        }
+
+
+    
+       
 
         nextButton.setOnClickListener(this);
         backButton.setOnClickListener(this);
         btnFalse.setOnClickListener(this);
         btnTrue.setOnClickListener(this);
+
+    }
+
+    private void showinital(ArrayList<Question> questionsBank, String lastScore) {
+
+
+        String question = (currentQuestionIndex+1) + ": "+questionsBank.get(currentQuestionIndex).getQuestion()+"?";
+        String count =currentQuestionIndex+ " / " + questionsList.size();
+        txtCounter.setText(count);
+        txtQuestion.setText(question);
+        txtScore.setText(String.format("Score: %s", lastScore));
+
 
     }
 
@@ -68,6 +109,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnTrue = findViewById(R.id.btnTrue);
         txtQuestion = findViewById(R.id.txtQuestion);
         cardView = findViewById(R.id.cardView);
+        txtScore = findViewById(R.id.txtScore);
     }
 
 
@@ -90,10 +132,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btnFalse:
                 checkAnswer(false);
+                updateScore();
                 updateQuestion();
+
                 break;
             case R.id.btnTrue:
                 checkAnswer(true);
+                updateScore();
                 updateQuestion();
                 break;
             default:
@@ -102,19 +147,50 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private void updateScore() {
+        String currentScore = "Score: " + score.getScore();
+        txtScore.setText(currentScore);
+
+    }
+
     private void checkAnswer(boolean b) {
         boolean answerIsTrue  = questionsList.get(currentQuestionIndex).isAnswer();
+        Log.d(TAG, "checkAnswer: " + answerIsTrue + ":" +b + ":" + currentQuestionIndex);
         String toastMessageId  = "";
         if( b == answerIsTrue){
             toastMessageId = "Correct";
+            addPoint();
             fadeView();
+            currentQuestionIndex +=1;
         }else{
             shakeAnimation();
+            minusPoint();
+
             toastMessageId = "Wrong";
         }
 
         Toast.makeText(this, toastMessageId, Toast.LENGTH_SHORT).show();
 
+    }
+
+    private void minusPoint() {
+        scoreCounter -= 100;
+        if( scoreCounter > 0){
+
+            score.setScore(scoreCounter);
+        }else{
+
+            scoreCounter = 0;
+            score.setScore(scoreCounter);
+        }
+
+
+    }
+
+    private void addPoint() {
+
+        scoreCounter += 100;
+        score.setScore(scoreCounter);
     }
 
     private void updateQuestion() {
@@ -176,6 +252,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             }
         });
+
+
+    }
+
+    @Override
+    protected void onPause() {
+
+        super.onPause();
+        sharedPreferences = getSharedPreferences(TRIVIA_PREFS ,MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+        editor.putString(SCORE , String.valueOf(score.getScore()));
+        editor.apply();
 
 
     }

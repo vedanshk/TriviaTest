@@ -9,4 +9,5 @@
     <string name="next">Next</string>
     <string name="back">Back</string>
     <string name="question">question</string>
+    <string name="score_0">Score: 0</string>
 </resources>
