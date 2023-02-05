@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
@@ -17,6 +18,7 @@ import android.widget.Toast;
 import com.example.triviatest.data.AnswerListAsyncResponse;
 import com.example.triviatest.data.QuestionBank;
 import com.example.triviatest.model.Question;
+import com.google.android.material.snackbar.BaseTransientBottomBar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -105,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String toastMessageId  = "";
         if( b == answerIsTrue){
             toastMessageId = "Correct";
+            fadeView();
         }else{
             shakeAnimation();
             toastMessageId = "Wrong";
@@ -128,6 +131,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onAnimationStart(Animation animation) {
                 cardView.setCardBackgroundColor(Color.RED);
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                cardView.setCardBackgroundColor(Color.WHITE);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+
+
+    }
+
+    private void fadeView(){
+
+
+        AlphaAnimation alphaAnimation  = new AlphaAnimation(1.0f , 0.0f);
+        alphaAnimation.setRepeatMode(Animation.REVERSE);
+        alphaAnimation.setDuration(350);
+        alphaAnimation.setRepeatCount(1);
+
+
+        cardView.setAnimation(alphaAnimation);
+
+        alphaAnimation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+                cardView.setCardBackgroundColor(Color.GREEN);
+
             }
 
             @Override
